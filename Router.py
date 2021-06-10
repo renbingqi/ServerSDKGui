@@ -15,7 +15,7 @@ class Ui_RouterWindow(QMainWindow):
 
     def initUI(self):
         self.resize(650,800)
-        #Router
+        # Router
         self.add_router_label=QLabel('<html><head/><body><p><span style="color:#ff0000;">Operating router:</span></p></body></html>',self)
         self.add_router_label.setGeometry(10, 30, 350, 16)
         # Device Id
@@ -57,25 +57,25 @@ class Ui_RouterWindow(QMainWindow):
             self)
         self.deviceTypeTipsLabel.setGeometry(340, 170, 300, 20)
 
-        #Add Router
-        self.addRouterButtom=QPushButton('Add Router',self)
-        self.addRouterButtom.setGeometry(10,210,110,35)
-        self.addRouterButtom.clicked.connect(self.add_router)
-
-        #Del Router
+#         #Add Router
+        self.add_router_buttom=QPushButton('Add Router',self)
+        self.add_router_buttom.setGeometry(10,210,110,35)
+        self.add_router_buttom.clicked.connect(self.add_router)
+#
+#         #Del Router
         self.DelRouterButtom = QPushButton('Del Router', self)
         self.DelRouterButtom.setGeometry(150, 210, 110, 35)
         self.DelRouterButtom.clicked.connect(self.del_router)
-
-        # Show Router
+#
+#         # Show Router
         self.ShowRouterButtom = QPushButton('Show Router', self)
         self.ShowRouterButtom.setGeometry(290, 210, 110, 35)
         self.ShowRouterButtom.clicked.connect(self.show_router)
-
-        #Listen router
+#
+#         #Listen router
         self.list_router_label = QLabel(self)
         self.list_router_label.setText(
-            '<a href=http://127.0.0.1:8123/listener/eventlog>''<b>''List Temperature Data''</b>''</a>')
+            '<a href=http://127.0.0.1:8123/listener/eventlog><b>Listener Router</b></a>')
         self.list_router_label.setOpenExternalLinks(True)
         self.list_router_label.setGeometry(10, 290, 600, 50)
         #listen temp
@@ -83,7 +83,7 @@ class Ui_RouterWindow(QMainWindow):
         self.list_temp_label.setText('<a href=http://127.0.0.1:8123/listener/temperature>''<b>List Temperature Data</b>''</a>')
         self.list_temp_label.setOpenExternalLinks(True)
         self.list_temp_label.setGeometry(180,290,600,50)
-        #listen ECG
+#         #listen ECG
         self.list_ecg_label=QLabel(self)
         self.list_ecg_label.setText('<a href=http://127.0.0.1:8123/listener/ecg>'' <b>List ECG Data</b>''</a>')
         self.list_ecg_label.setOpenExternalLinks(True)
@@ -94,13 +94,13 @@ class Ui_RouterWindow(QMainWindow):
             '<a href=http://127.0.0.1:8123/listener/spo2>'' <b>List SpO2 Data</b>''</a>')
         self.list_spo2_label.setOpenExternalLinks(True)
         self.list_spo2_label.setGeometry(500, 290, 600, 50)
-
-        #Tips:
+#
+#         #Tips:
         self.TipsLabel=QLabel('<html><head/><body><span style="color:#ff0000;">Tips: </span></body></html>\n'
                               '<html><head/><body><span style="color:#ff0000;">1.Add Router 所有字段都为必填 </span></body></html>\n'
                               '<html><head/><body><span style="color:#ff0000;">2.Del Router 只需填写DeviceId字段 </span></body></html>',self)
-        self.TipsLabel.setGeometry(10,180,600,200)
-        # 日志栏
+        self.TipsLabel.setGeometry(10,230,300,90)
+#         # 日志栏
         self.log_textEdit=QTextEdit(self)
         self.log_textEdit.setGeometry(30,340,500,430)
         self.setWindowTitle("ServerSDKGui v2.0")
@@ -111,9 +111,9 @@ class Ui_RouterWindow(QMainWindow):
         self.menubar.addAction(device_window)
         device_window.triggered.connect(self.show_device_window)
         self.show()
-
-
-
+#
+#
+#
     def show_device_window(self):
         from Device import Ui_DeviceWindow
         self.close()
@@ -124,7 +124,6 @@ class Ui_RouterWindow(QMainWindow):
         self.log_textEdit.append(str)
 
     def add_router(self):
-        print("1111")
         self.log_textEdit.clear()
         deviceId=self.deviceIdLineEdit.text()
         deviceName=self.deviceNameLineEdit.text()
@@ -163,16 +162,15 @@ class Add_router(QThread):
             requestbody = [{"deviceId":self.deviceId,"deviceName":self.deviceName,"address":self.deviceAddress,"routerType":self.deviceType}]
             url = "http://localhost:8123/routers"
             payload = json.dumps(requestbody)
-            print(payload)
             headers = {
                 'Content-Type': 'application/json'
             }
 
             response = requests.request("POST", url, headers=headers, data=payload)
             if response.json()['message'] == 'success':
-                self.trigger.emit(f'{eval(self.add_router_textEdit.toPlainText())["deviceId"]}添加成功')
+                self.trigger.emit(f'{self.deviceId}添加成功')
             else:
-                self.trigger.emit(f'{eval(self.add_router_textEdit.toPlainText())["deviceId"]}添加失败')
+                self.trigger.emit(f'{self.deviceId}添加失败')
         except Exception as e:
             self.trigger.emit(str(e))
 
@@ -193,9 +191,9 @@ class Del_router(QThread):
             }
             response = requests.request("DELETE", url, headers=headers, data=payload)
             if response.json()['message'] == 'success':
-                self.trigger.emit(f'{eval(self.add_router_textEdit.toPlainText())["deviceId"]}删除成功')
+                self.trigger.emit(f'{self.deviceId}删除成功')
             else:
-                self.trigger.emit(f'{eval(self.add_router_textEdit.toPlainText())["deviceId"]}删除失败')
+                self.trigger.emit(f'{self.deviceId}删除失败')
         except Exception as e:
             self.trigger.emit(str(e))
 
@@ -208,10 +206,13 @@ class Show_router(QThread):
         url = "http://localhost:8123/routers"
         payload = {}
         headers = {}
-        response = requests.request("GET", url, headers=headers, data=payload)
-        for router in response.json()['data']:
-            self.trigger.emit(str(router).replace(",", '\n').replace('{', '').replace("}", '').replace(" ", ''))
-            self.trigger.emit("----------------------------------------")
+        try:
+            response = requests.request("GET", url, headers=headers, data=payload)
+            for router in response.json()['data']:
+                self.trigger.emit(str(router).replace(",", '\n').replace('{', '').replace("}", '').replace(" ", ''))
+                self.trigger.emit("----------------------------------------")
+        except Exception as e:
+            self.trigger.emit(str(e))
 
 
 if __name__ == '__main__':

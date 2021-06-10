@@ -66,7 +66,7 @@ class Ui_DeviceWindow(QMainWindow):
         #Listen Device
         self.list_Device_label = QLabel(self)
         self.list_Device_label.setText(
-            '<a href=http://127.0.0.1:8123/listener/eventlog>''<b>''List Temperature Data''</b>''</a>')
+            '<a href=http://127.0.0.1:8123/listener/eventlog>''<b>''Listener Router''</b>''</a>')
         self.list_Device_label.setOpenExternalLinks(True)
         self.list_Device_label.setGeometry(10, 290, 600, 50)
         #listen temp
@@ -90,7 +90,7 @@ class Ui_DeviceWindow(QMainWindow):
         self.TipsLabel=QLabel('<html><head/><body><span style="color:#ff0000;">Tips: </span></body></html>\n'
                               '<html><head/><body><span style="color:#ff0000;">1.Add Device 体温设备可只填写DeviceId字段（SN号）其余设备所有字段都为必填 </span></body></html>\n'
                               '<html><head/><body><span style="color:#ff0000;">2.Del Device 只需填写DeviceId字段 </span></body></html>',self)
-        self.TipsLabel.setGeometry(10,140,600,200)
+        self.TipsLabel.setGeometry(10,220,500,90)
         # 日志栏
         self.log_textEdit=QTextEdit(self)
         self.log_textEdit.setGeometry(30,340,500,430)
@@ -125,7 +125,8 @@ class Ui_DeviceWindow(QMainWindow):
     def del_Device(self):
         self.log_textEdit.clear()
         deviceId = self.deviceIdLineEdit.text()
-        self.thread = Del_Device(deviceId)
+        deviceName=self.deviceNameLineEdit.text()
+        self.thread = Del_Device(deviceId,deviceName)
         self.thread.trigger.connect(self.show_testEdit)
         self.thread.start()
 
@@ -147,8 +148,8 @@ class Add_Device(QThread):
 
     def run(self):
         try:
-            requestbody = [{"deviceId":self.deviceId,"deviceName":self.deviceName,"DeviceType":self.deviceType}]
-            url = "http://localhost:8123/Devices"
+            requestbody = [{"deviceId":self.deviceId,"deviceName":self.deviceName,"deviceType":self.deviceType}]
+            url = "http://localhost:8123/devices"
             payload = json.dumps(requestbody)
             headers = {
                 'Content-Type': 'application/json'
@@ -156,17 +157,18 @@ class Add_Device(QThread):
 
             response = requests.request("POST", url, headers=headers, data=payload)
             if response.json()['message'] == 'success':
-                self.trigger.emit(f'{eval(self.add_Device_textEdit.toPlainText())["deviceId"]}添加成功')
+                self.trigger.emit(f'{self.deviceName}添加成功')
             else:
-                self.trigger.emit(f'{eval(self.add_Device_textEdit.toPlainText())["deviceId"]}添加失败')
+                self.trigger.emit(f'{self.deviceName}添加失败')
         except Exception as e:
             self.trigger.emit(str(e))
 
 class Del_Device(QThread):
     trigger = pyqtSignal(str)
-    def __init__(self,deviceId):
+    def __init__(self,deviceId,deviceName):
         super(Del_Device,self).__init__()
         self.deviceId=deviceId
+        self.deviceName=deviceName
 
     def run(self):
         try:
@@ -179,9 +181,9 @@ class Del_Device(QThread):
             }
             response = requests.request("DELETE", url, headers=headers, data=payload)
             if response.json()['message'] == 'success':
-                self.trigger.emit(f'{eval(self.add_Device_textEdit.toPlainText())["deviceId"]}删除成功')
+                self.trigger.emit(f'{self.deviceName}删除成功')
             else:
-                self.trigger.emit(f'{eval(self.add_Device_textEdit.toPlainText())["deviceId"]}删除失败')
+                self.trigger.emit(f'{self.deviceName}删除失败')
         except Exception as e:
             self.trigger.emit(str(e))
 
@@ -191,13 +193,16 @@ class Show_Device(QThread):
         super(Show_Device, self).__init__()
 
     def run(self):
-        url = "http://localhost:8123/Devices"
+        url = "http://localhost:8123/devices"
         payload = {}
         headers = {}
-        response = requests.request("GET", url, headers=headers, data=payload)
-        for Device in response.json()['data']:
-            self.trigger.emit(str(Device).replace(",", '\n').replace('{', '').replace("}", '').replace(" ", ''))
-            self.trigger.emit("----------------------------------------")
+        try:
+            response = requests.request("GET", url, headers=headers, data=payload)
+            for Device in response.json()['data']:
+                self.trigger.emit(str(Device).replace(",", '\n').replace('{', '').replace("}", '').replace(" ", ''))
+                self.trigger.emit("----------------------------------------")
+        except Exception as e:
+            self.trigger.emit(str(e))
 
 
 if __name__ == '__main__':
