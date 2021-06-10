@@ -80,6 +80,7 @@ class Ui_MainWindow(QMainWindow):
         # 日志栏
         self.log_textEdit=QTextEdit(self)
         self.log_textEdit.setGeometry(30,340,500,430)
+        self.setWindowTitle("ServerSDKGui v1.0")
         self.show()
 
     def show_testEdit(self,str):
